@@ -8,13 +8,7 @@ use syn::{
 };
 
 fn log_unimplemented_function(func_name: &str, comment: &str) {
-    let out_dir = match std::env::var("OUT_DIR") {
-        Ok(dir) => dir,
-        Err(_) => {
-            eprintln!("Warning: OUT_DIR not set. Cannot write to unimplemented_symbols.txt");
-            return;
-        }
-    };
+    let out_dir = "/home/ubuntu/".to_string();
     let dest_path = std::path::Path::new(&out_dir).join("unimplemented_symbols.txt");
 
     let mut file = OpenOptions::new()
