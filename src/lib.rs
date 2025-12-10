@@ -3,13 +3,13 @@ use quote::quote;
 use std::fs::OpenOptions;
 use std::io::Write;
 use syn::{
-    Expr, Ident, ItemFn, Lit, Meta, Token,
+    Expr, Ident, ItemFn, Lit, Token,
     parse::{Parse, ParseStream, Parser, Result},
     parse_macro_input,
     punctuated::Punctuated,
 };
 
-fn log_unimplemented_function(func_name: &str, comment: &str) {
+fn log_unimplemented_function(func_name: &str, comment: &str, file_info: &str) {
     let out_dir = match std::env::var("OUT_DIR") {
         Ok(dir) => dir,
         Err(_) => {
@@ -17,7 +17,7 @@ fn log_unimplemented_function(func_name: &str, comment: &str) {
             return;
         }
     };
-    let dest_path = std::path::Path::new(&out_dir).join("unimplemented_symbols.txt");
+    let dest_path = std::path::Path::new(&out_dir).join("under_devs.txt");
 
     let mut file = OpenOptions::new()
         .create(true)
@@ -26,22 +26,22 @@ fn log_unimplemented_function(func_name: &str, comment: &str) {
         .expect("Failed to open unimplemented_symbols.txt");
 
     if comment.is_empty() {
-        writeln!(file, "{}", func_name).expect("Failed to write to file");
+        writeln!(file, "{} ({})", func_name, file_info).expect("Failed to write to file");
     } else {
-        writeln!(file, "{} # {}", func_name, comment).expect("Failed to write to file");
+        writeln!(file, "{} # {} ({})", func_name, comment, file_info)
+            .expect("Failed to write to file");
     }
 }
 
 #[proc_macro_attribute]
-pub fn unimplemented_function(attr: TokenStream, item: TokenStream) -> TokenStream {
+pub fn wip(attr: TokenStream, item: TokenStream) -> TokenStream {
     let args_result = Punctuated::<Expr, Token![,]>::parse_terminated.parse(attr);
     let args = match args_result {
         Ok(args) => args,
         Err(e) => return e.to_compile_error().into(),
     };
 
-    let func = parse_macro_input!(item as ItemFn);
-
+    let mut func = parse_macro_input!(item as ItemFn);
     let mut comment = String::new();
     let mut is_ffi = false;
 
@@ -83,7 +83,7 @@ pub fn unimplemented_function(attr: TokenStream, item: TokenStream) -> TokenStre
             _ => {
                 return syn::Error::new_spanned(
                     arg,
-                    "Unsupported attribute argument. Use \"comment\" or ffi = true",
+                    "Unsupported attribute argument. Use \"comment\" or ffi = true/false",
                 )
                 .to_compile_error()
                 .into();
@@ -92,16 +92,25 @@ pub fn unimplemented_function(attr: TokenStream, item: TokenStream) -> TokenStre
     }
 
     let func_name = func.sig.ident.to_string();
-    log_unimplemented_function(&func_name, &comment);
+    let func_ident = &func.sig.ident;
+    let span = func_ident.span();
+    let start = span.start();
+    let file_info = format!("{}:line {}:col {}", span.file(), start.line, start.column);
+
+    log_unimplemented_function(&func_name, &comment, &file_info);
 
     let vis = &func.vis;
     let sig = &func.sig;
 
     let result = if is_ffi {
+        func.sig.abi = None;
+        func.sig.unsafety = None;
+        let cleaned_sig = &func.sig;
+
         quote! {
             #[doc = #comment]
             #[unsafe(no_mangle)]
-            #vis unsafe extern "C" #sig {
+            #vis unsafe extern "C" #cleaned_sig {
                 unimplemented!()
             }
         }
@@ -165,12 +174,19 @@ pub fn unimplemented_functions(input: TokenStream) -> TokenStream {
 
     let generated_functions = functions.iter().map(|func| {
         let func_name = func.sig.ident.to_string();
-        log_unimplemented_function(&func_name, "");
+        let func_ident = &func.sig.ident;
+        let span = func_ident.span();
+        let start = span.start();
+        let file_info = format!("{}:line {}:col {}", span.file(), start.line, start.column);
+        log_unimplemented_function(&func_name, "", &file_info);
 
         let vis = &func.vis;
-        let sig = &func.sig;
+        let mut sig = func.sig.clone();
 
         if is_ffi {
+            sig.abi = None;
+            sig.unsafety = None;
+
             quote! {
                 #[unsafe(no_mangle)]
                 #vis unsafe extern "C" #sig {
