@@ -1,5 +1,5 @@
 # under_dev
-Macros to indicate unimplemented symbols
+Macros to indicate under development functions
 
 # Usage
 ## unimplemented_functions!
