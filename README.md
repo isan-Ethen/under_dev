@@ -1,5 +1,5 @@
-# unimpl_symbols
-Macros to indicate unimplemented symbols
+# under_dev
+Macros to indicate under development functions
 
 # Usage
 ## unimplemented_functions!
@@ -15,8 +15,8 @@ unimplemented_functions! {
 }
 ```
 
-## unimplemented_function
+## wip
 ```rust
-#[unimplemented_function("Comment about the implementation status of this function")]
+#[wip("Comment about the implementation status of this function")]
 pub fn function(c: &str) -> i32 { 0i32 }
 ```
