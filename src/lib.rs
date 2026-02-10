@@ -10,7 +10,7 @@ use syn::{
 };
 
 fn log_unimplemented_function(func_name: &str, comment: &str, file_info: &str) {
-    let out_dir = "/home/isan/redox".to_string();
+    let out_dir = std::env::var("COOKBOOK_LOGS").unwrap();
     let dest_path = std::path::Path::new(&out_dir).join("under_devs.txt");
 
     let mut file = OpenOptions::new()
