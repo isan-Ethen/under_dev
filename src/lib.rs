@@ -105,14 +105,14 @@ pub fn wip(attr: TokenStream, item: TokenStream) -> TokenStream {
             #[doc = #comment]
             #[unsafe(no_mangle)]
             #vis unsafe extern "C" #cleaned_sig {
-                unimplemented!()
+                unimplemented!(#comment)
             }
         }
     } else {
         quote! {
             #[doc = #comment]
             #vis #sig {
-                unimplemented!()
+                unimplemented!(#comment)
             }
         }
     };
