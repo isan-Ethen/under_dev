@@ -105,14 +105,14 @@ pub fn wip(attr: TokenStream, item: TokenStream) -> TokenStream {
             #[doc = #comment]
             #[unsafe(no_mangle)]
             #vis unsafe extern "C" #cleaned_sig {
-                unimplemented!(#comment)
+                unimplemented!("{}: {}", #func_name, #comment)
             }
         }
     } else {
         quote! {
             #[doc = #comment]
             #vis #sig {
-                unimplemented!(#comment)
+                unimplemented!("{}: {}", #func_name, #comment)
             }
         }
     };
@@ -184,13 +184,13 @@ pub fn unimplemented_functions(input: TokenStream) -> TokenStream {
             quote! {
                 #[unsafe(no_mangle)]
                 #vis unsafe extern "C" #sig {
-                    unimplemented!()
+                    unimplemented!(#func_name)
                 }
             }
         } else {
             quote! {
                 #vis #sig {
-                    unimplemented!()
+                    unimplemented!(#func_name)
                 }
             }
         }
